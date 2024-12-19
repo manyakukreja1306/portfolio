@@ -1,39 +1,104 @@
+/* Global Styles */
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f9f9f9;
-    color: #333;
-  }
-  
-  header, footer {
-    background-color: #333;
-    color: white;
-    text-align: center;
-    padding: 1em 0;
-  }
-  
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f7f4f1;  
+  color: #333;  
+}
+
+/* Header and Footer */
+header, footer {
+  background-color: #A3D5FF;  
+  color: #fff;  
+  text-align: center;
+  padding: 1.5em 0;
+}
+
+/* Navigation Bar */
+ul {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  margin: 0 1.5em;
+}
+
+a {
+  text-decoration: none;
+  color: #fff;  
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #f4a261;  
+}
+
+/* Section Styling */
+section {
+  padding: 3em;
+  text-align: center;
+  background-color: #ffffff;  
+  border-radius: 8px;  
+  margin: 2em 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+}
+
+/* Headers */
+h1 {
+  color: #333; 
+  font-size: 2.5em;
+  margin-bottom: 0.5em;
+}
+
+/* About Section */
+#about {
+  background-color: #F0E6D2;  
+  padding: 2em;
+  border-radius: 8px;
+  margin-bottom: 2em;
+}
+
+/* Projects Section */
+#projects {
+  background-color: #f9f9f9;  
+}
+
+/* Contact Section */
+#contact {
+  background-color: #A3D5FF;  
+  padding: 2em;
+  color: #fff;
+  border-radius: 8px;
+  margin-top: 2em;
+}
+
+/* Footer */
+footer {
+  background-color: #333;  
+  color: white;
+  padding: 1em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
   ul {
-    display: flex;
-    justify-content: center;
-    list-style: none;
+    flex-direction: column;
   }
-  
+
   ul li {
-    margin: 0 1em;
+    margin: 1em 0;
   }
-  
-  a {
-    text-decoration: none;
-    color: white;
-  }
-  
+
   section {
-    padding: 2em;
-    text-align: center;
+    padding: 1.5em;
   }
-  
+
   h1 {
-    color: #333;
+    font-size: 2em;
   }
-  
+}
