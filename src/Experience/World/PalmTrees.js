@@ -5,14 +5,14 @@ export class PalmTrees {
     this.scene = experience.scene
     this.trees = []
     const positions = [
-      { x: -8, z: -3, scale: 1.0, rot: 0.1 },
-      { x: 8, z: 2, scale: 0.85, rot: -0.15 },
-      { x: -5, z: 8, scale: 0.7, rot: 0.2 },
-      { x: 10, z: -6, scale: 0.9, rot: -0.1 }
+      { x: -8, y: -0.5, z: -3, scale: 1.0, rot: 0.1 },
+      { x: 8, y: 0.3, z: 2, scale: 0.85, rot: -0.15 },
+      { x: -5, y: 0, z: 8, scale: 0.7, rot: 0.2 },
+      { x: 10, y: -0.2, z: -6, scale: 0.9, rot: -0.1 }
     ]
     positions.forEach(p => {
       const tree = this.createTree(p.scale)
-      tree.position.set(p.x, 0, p.z)
+      tree.position.set(p.x, p.y, p.z)
       tree.rotation.z = p.rot
       this.scene.add(tree)
       this.trees.push(tree)

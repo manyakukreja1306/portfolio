@@ -20,8 +20,8 @@ export class Signpost {
     this.buildPost()
     this.buildArrowsAsync()
 
-    // Move closer to shack and angle towards camera slightly
-    this.group.position.set(-3.5, 0, 4)
+    // Move closer to shack and angle towards camera slightly, lowered to sit on the ground
+    this.group.position.set(-3.5, -0.4, 4)
     this.group.rotation.y = Math.PI * 0.15
     this.scene.add(this.group)
   }

@@ -16,7 +16,7 @@ export class SurfShop {
     this.buildSigns()
     this.buildTable()
     this.buildPlant()
-    this.group.position.set(0, 0, 0)
+    this.group.position.set(0, -0.5, 0)
     this.scene.add(this.group)
     
     this.boards = {}
@@ -89,13 +89,13 @@ export class SurfShop {
   }
 
   buildShack() {
-    const body = new THREE.Mesh(new THREE.BoxGeometry(5, 3.5, 4), this.mat('#B8864E'))
-    body.position.set(0, 1.75, 0)
+    const body = new THREE.Mesh(new THREE.BoxGeometry(5, 3.75, 4), this.mat('#B8864E'))
+    body.position.set(0, 1.875, 0)
     body.castShadow = true; body.receiveShadow = true
     this.group.add(body)
 
-    const front = new THREE.Mesh(new THREE.BoxGeometry(5.05, 3.5, 0.05), this.mat('#C4956A'))
-    front.position.set(0, 1.75, 2.025)
+    const front = new THREE.Mesh(new THREE.BoxGeometry(5.05, 3.75, 0.05), this.mat('#C4956A'))
+    front.position.set(0, 1.875, 2.025)
     this.group.add(front)
 
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), this.mat('#4A3520'))
@@ -127,12 +127,12 @@ export class SurfShop {
     this.group.add(roof)
 
     const support1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8), this.mat('#5C4A1E'))
-    support1.position.set(-2.3, 3.2, 2.3)
-    support1.rotation.z = 0.15
+    support1.position.set(-2.3, 3.35, 2.05)
+    support1.rotation.z = 0.0
     this.group.add(support1)
     const support2 = support1.clone()
     support2.position.x = 2.3
-    support2.rotation.z = -0.15
+    support2.rotation.z = 0.0
     this.group.add(support2)
 
     const ridge = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.08, 0.3), this.mat('#6A7B8A', { r: 0.4, m: 0.3 }))
@@ -253,11 +253,12 @@ export class SurfShop {
     this._activeSection = sectionName
 
     // Launch it up and forward to display position
+    // y: 3.0 compensates for the SurfShop group being at y=-0.5 so world position = 2.5
     gsap.to(board.position, {
       duration: 3.0,
       ease: 'power2.inOut',
       x: 0,
-      y: 2.5,
+      y: 3.0,
       z: 6
     })
 
@@ -809,11 +810,14 @@ export class SurfShop {
     const top = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.6), this.mat('#A08050'))
     top.position.set(-3, 0.7, 2.5)
     top.castShadow = true
+    top.receiveShadow = true
     this.group.add(top)
 
     for (const [dx, dz] of [[-0.3, -0.2], [0.3, -0.2], [-0.3, 0.2], [0.3, 0.2]]) {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.7, 0.06), this.mat('#8B6914'))
       leg.position.set(-3 + dx, 0.35, 2.5 + dz)
+      leg.castShadow = true
+      leg.receiveShadow = true
       this.group.add(leg)
     }
 
