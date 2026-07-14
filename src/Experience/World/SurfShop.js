@@ -13,12 +13,14 @@ export class SurfShop {
     this.group = new THREE.Group()
     this.buildShack()
     this.buildRoof()
-    this.buildSigns()
+    this.buildSignsAsync()
     this.buildTable()
-    this.buildPlant()
+    this.buildPlant()              // original left-side plant
+    this.buildPlant(1.6, 2.6)     // right of door — plant 1
+    this.buildPlant(2.1, 2.6)     // right of door — plant 2
     this.group.position.set(0, -0.5, 0)
     this.scene.add(this.group)
-    
+
     this.boards = {}
     this._ghButtons = {}
     this._activeSection = null
@@ -99,14 +101,14 @@ export class SurfShop {
     this.group.add(front)
 
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), this.mat('#4A3520'))
-    door.position.set(0.8, 1.1, 2.08)
+    door.position.set(0.8, 1.1, 2.40)
     this.group.add(door)
 
     const win = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.8, 0.08), this.mat('#87CEEB', { r: 0.2, m: 0.1 }))
-    win.position.set(-1.2, 2.2, 2.08)
+    win.position.set(-1.2, 2.2, 2.10)
     this.group.add(win)
     const winFrame = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.95, 0.06), this.mat('#5C4A1E'))
-    winFrame.position.set(-1.2, 2.2, 2.06)
+    winFrame.position.set(-1.2, 2.2, 2.08)
     this.group.add(winFrame)
 
     for (let i = 0; i < 6; i++) {
@@ -140,7 +142,11 @@ export class SurfShop {
     this.group.add(ridge)
   }
 
-  buildSigns() {
+  async buildSignsAsync() {
+    // Wait for Permanent Marker font before drawing canvas text
+    try { await document.fonts.load('60px "Permanent Marker"') } catch (e) { }
+    await document.fonts.ready
+
     const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.8, 0.15), this.mat('#F5F0E0'))
     signBoard.position.set(0, 4.2, 0.3)
     this.group.add(signBoard)
@@ -156,16 +162,16 @@ export class SurfShop {
     const ovalGeo = new THREE.CircleGeometry(0.9, 32)
     ovalGeo.scale(1.4, 1, 1)
     const oval = new THREE.Mesh(ovalGeo, this.mat('#E8D5B8'))
-    oval.position.set(0, 2.8, 2.1)
+    oval.position.set(0, 2.8, 2.3)
     this.group.add(oval)
 
     const ringGeo = new THREE.RingGeometry(0.85, 0.95, 32)
     ringGeo.scale(1.4, 1, 1)
     const ring = new THREE.Mesh(ringGeo, this.mat('#5BBFBF'))
-    ring.position.set(0, 2.8, 2.11)
+    ring.position.set(0, 2.8, 2.31)
     this.group.add(ring)
 
-    this.addCanvasText("Manya's\nSurf Shack", 2.2, 1.2, new THREE.Vector3(0, 2.8, 2.12), {
+    this.addCanvasText("Manya's\nSurf Shack", 2.2, 1.2, new THREE.Vector3(0, 2.8, 2.32), {
       font: '44px "Permanent Marker", sans-serif', color: '#2C3E50', bg: 'transparent', lineHeight: 50
     })
   }
@@ -187,8 +193,8 @@ export class SurfShop {
     const colors = ['#F2C94C', '#F2994A', '#5BBFBF', '#EB5757', '#2D9CDB']
     const rackPos = new THREE.Vector3(0, 0, 2.5)
 
-    const rackBar = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.08, 0.08), this.mat('#8B6914'))
-    rackBar.position.set(rackPos.x, 1.8, rackPos.z + 0.8)
+    const rackBar = new THREE.Mesh(new THREE.BoxGeometry(2.75, 0.08, 0.08), this.mat('#8B6914'))
+    rackBar.position.set(rackPos.x - 0.875, 1.3, rackPos.z + 0.8)
     this.group.add(rackBar)
     const rackBar2 = rackBar.clone()
     rackBar2.position.y = 0.5
@@ -197,13 +203,13 @@ export class SurfShop {
     const shape = this.getSurfboardShape()
     const extrudeSettings = { depth: 0.06, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2 }
     const boardGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-    
+
     // Create decal geometry for fading text in/out, matching the exact shape so it clips properly!
     const decalGeo = new THREE.ShapeGeometry(shape)
     const pos = decalGeo.attributes.position
     const uvs = []
-    for(let i=0; i<pos.count; i++) {
-       uvs.push((pos.getX(i) + 0.3) / 0.6, (pos.getY(i) + 1.5) / 3.0)
+    for (let i = 0; i < pos.count; i++) {
+      uvs.push((pos.getX(i) + 0.3) / 0.6, (pos.getY(i) + 1.5) / 3.0)
     }
     decalGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
 
@@ -211,28 +217,31 @@ export class SurfShop {
     const sectionNames = ['about', 'projects', 'experience', 'skills', 'contact']
 
     for (let i = 0; i < 5; i++) {
-      // Solid board
+      // Solid board — stagger z so overlapping boards never Z-fight each other
       const board = new THREE.Mesh(boardGeo, this.mat(colors[i]))
-      
+
       const x = -1.8 + i * 0.5
-      board.position.set(rackPos.x + x, 0, rackPos.z + 0.6)
+      board.position.set(rackPos.x + x, 0, rackPos.z + 0.6 + i * 0.03)
       board.rotation.x = -0.15
-      board.rotation.z = (Math.random() - 0.5) * 0.04
+      board.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.02  // deterministic tilt, no random
+      board.renderOrder = i
       board.castShadow = true
       this.group.add(board)
 
       // Text Decal
       const tex = this.createBoardTexture(sections[i], 'transparent')
-      const decalMat = new THREE.MeshBasicMaterial({ 
-        map: tex, 
-        transparent: true, 
+      const decalMat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
         opacity: 0,
-        depthWrite: false 
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       })
       const decal = new THREE.Mesh(decalGeo, decalMat)
-      // Extrude front face is at Z = depth (0.06) + bevelThickness (0.02) = 0.08. 
-      // Place decal at 0.082 so it sits perfectly on the surface!
-      decal.position.set(0, 0, 0.082) 
+      // Place decal slightly proud of the extruded front face to avoid Z-fighting
+      decal.position.set(0, 0, 0.09)
       board.add(decal)
 
       // Store original transforms and references
@@ -278,7 +287,7 @@ export class SurfShop {
         ease: 'power2.out'
       })
     }
-    
+
     if (board.userData.backBtnMat) {
       gsap.to(board.userData.backBtnMat, {
         duration: 1.5,
@@ -319,7 +328,7 @@ export class SurfShop {
         ease: 'power2.inOut'
       })
     }
-    
+
     if (board.userData.backBtnMat) {
       gsap.to(board.userData.backBtnMat, {
         duration: 1.0,
@@ -340,18 +349,18 @@ export class SurfShop {
   addBackButtonToBoard(boardGroup, sectionName, boardColor) {
     const w = 0.2; const h = 0.06
     const backBtnGeo = new THREE.PlaneGeometry(w, h)
-    
+
     // Create texture for back button
     const canvas = document.createElement('canvas')
     canvas.width = 256; canvas.height = 64
     const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, 256, 64) 
-    
+    ctx.clearRect(0, 0, 256, 64)
+
     // Try to match the exact font and style from the image
     ctx.font = 'bold 38px "Times New Roman", serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    
+
     const text = 'BACK'
     const x = 128
     const y = 32
@@ -364,7 +373,7 @@ export class SurfShop {
     ctx.lineWidth = 1.5
     ctx.strokeStyle = '#000000'
     ctx.strokeText(text, x, y)
-    
+
     // 3. Dynamic inner fill matching board color
     ctx.fillStyle = boardColor || '#F5C642'
     ctx.fillText(text, x, y)
@@ -376,16 +385,16 @@ export class SurfShop {
     const backBtn = new THREE.Mesh(backBtnGeo, backBtnMat)
     // Position it at the bottom middle of the visible area
     backBtn.position.set(0, -0.32, 0.083)
-    
+
     // We can also create a slightly larger invisible hitbox so it's easy to click
     const hitbox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.1), new THREE.MeshBasicMaterial({ visible: false }))
     hitbox.position.copy(backBtn.position)
-    
+
     // The button should fade in just like the decal text
     backBtn.material.opacity = 0
     boardGroup.add(backBtn)
     boardGroup.add(hitbox)
-    
+
     // Save reference for fading
     boardGroup.userData.backBtnMat = backBtn.material
 
@@ -399,7 +408,7 @@ export class SurfShop {
       },
       onUnhover: () => {
         document.body.style.cursor = 'default'
-        backBtnMat.color.set('#FFFFFF') 
+        backBtnMat.color.set('#FFFFFF')
       }
     })
   }
@@ -423,19 +432,19 @@ export class SurfShop {
     const wrapRichText = (text, startX, y, maxWidth, lineHeight, draw = true) => {
       let currentX = startX
       let currentY = y
-      
+
       const words = text.split(' ')
       let isBold = false
       let isItalic = false
-      
+
       for (let word of words) {
         let post = ''
         if (word.startsWith('**')) { isBold = true; word = word.slice(2) }
         else if (word.startsWith('*')) { isItalic = true; word = word.slice(1) }
-        
+
         if (word.includes('**')) {
           const idx = word.indexOf('**')
-          post = word.slice(idx + 2) 
+          post = word.slice(idx + 2)
           word = word.slice(0, idx)
         } else if (word.includes('*')) {
           const idx = word.indexOf('*')
@@ -452,18 +461,18 @@ export class SurfShop {
           currentX = startX
           currentY += lineHeight
         }
-        
+
         if (draw) ctx.fillText(word, currentX, currentY)
         currentX += wordWidth
-        
+
         if (post) {
-           isBold = false
-           isItalic = false
-           ctx.font = bodyFont
-           if (draw) ctx.fillText(post, currentX, currentY)
-           currentX += postWidth
+          isBold = false
+          isItalic = false
+          ctx.font = bodyFont
+          if (draw) ctx.fillText(post, currentX, currentY)
+          currentX += postWidth
         }
-        
+
         currentX += spaceWidth
       }
       return currentY + lineHeight
@@ -477,7 +486,7 @@ export class SurfShop {
       ctx.fillStyle = '#1A365D'
       if (draw) {
         ctx.save()
-        ctx.translate(w/2, y + 40)
+        ctx.translate(w / 2, y + 40)
         ctx.rotate(-0.05)
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
@@ -527,9 +536,9 @@ export class SurfShop {
         ctx.moveTo(marginX, y)
         for (let i = 0; i < 8; i++) {
           ctx.bezierCurveTo(
-            marginX + i*28 + 14, y - 12,
-            marginX + i*28 + 14, y + 12,
-            marginX + i*28 + 28, y
+            marginX + i * 28 + 14, y - 12,
+            marginX + i * 28 + 14, y + 12,
+            marginX + i * 28 + 28, y
           )
         }
         ctx.strokeStyle = '#5BBFBF'
@@ -597,7 +606,7 @@ export class SurfShop {
       ctx.fillStyle = bgColor
       ctx.fillRect(0, 0, w, h)
     }
-    
+
     if (data.isAbout) {
       const tex = new THREE.CanvasTexture(canvas)
       tex.colorSpace = THREE.SRGBColorSpace
@@ -639,7 +648,7 @@ export class SurfShop {
 
       // 1. Hand-painted Header — smaller for projects to give content room
       const headerSize = data.items && data.items[0] && data.items[0].bullets ? '70px' : '96px'
-      const headerGap  = data.items && data.items[0] && data.items[0].bullets ? 100 : 150
+      const headerGap = data.items && data.items[0] && data.items[0].bullets ? 100 : 150
       ctx.font = `${headerSize} "Permanent Marker", sans-serif`
       if (draw) {
         ctx.fillStyle = textColor
@@ -661,13 +670,13 @@ export class SurfShop {
 
       if (data.bio) { // About Me
         data.bio.forEach(para => {
-          if(para === "") { y += 30; return }
+          if (para === "") { y += 30; return }
           y = wrapText(para, marginX, y, textWidth, 48, bodyFont, draw)
         })
         y += 60
         if (draw) ctx.fillStyle = '#333333'
         y = wrapText(data.tags.join('  '), marginX, y, textWidth, 40, smallFont, draw)
-      } 
+      }
       else if (data.items && data.items[0] && data.items[0].github) { // Projects with github links
         const projTitleFont = 'bold 28px Outfit, sans-serif'
         const projBodyFont = '22px Outfit, sans-serif'
@@ -718,10 +727,10 @@ export class SurfShop {
         })
       }
       else if (data.items && data.items[0] && data.items[0].role) { // Experience
-        const expRoleFont   = 'bold 26px Outfit, sans-serif'
-        const expMetaFont   = 'italic 20px Outfit, sans-serif'
-        const expBodyFont   = '20px Outfit, sans-serif'
-        const expStackFont  = 'bold 20px Outfit, sans-serif'
+        const expRoleFont = 'bold 26px Outfit, sans-serif'
+        const expMetaFont = 'italic 20px Outfit, sans-serif'
+        const expBodyFont = '20px Outfit, sans-serif'
+        const expStackFont = 'bold 20px Outfit, sans-serif'
 
         data.items.forEach(item => {
           // Role — bold title
@@ -749,7 +758,7 @@ export class SurfShop {
       }
       else if (data.groups) { // Skills
         const skillNameFont = 'bold 24px Outfit, sans-serif'
-        const skillValFont  = '20px Outfit, sans-serif'
+        const skillValFont = '20px Outfit, sans-serif'
 
         data.groups.forEach(group => {
           // Category name
@@ -771,7 +780,7 @@ export class SurfShop {
         if (draw) ctx.fillStyle = '#111111'
         y = wrapText(data.subtitle, marginX, y, textWidth, 48, bodyFont, draw)
         y += 90
-        
+
         data.items.forEach(item => {
           if (draw) ctx.fillStyle = textColor
           y = wrapText(item.type, marginX, y, textWidth, 48, boldFont, draw)
@@ -789,16 +798,16 @@ export class SurfShop {
 
     // Calculate vertical centering
     let startY = (h - totalHeight) / 2
-    
+
     // Ensure we don't go too close to the top edge due to the board curve
     if (startY < 320) startY = 320
-    
+
     // Pass 2: Draw the content at the centered position
     layoutContent(true, startY)
 
     const tex = new THREE.CanvasTexture(canvas)
     tex.colorSpace = THREE.SRGBColorSpace
-    
+
     // We let the UV map natively to the ShapeGeometry bounds [0,1]
     tex.wrapS = THREE.ClampToEdgeWrapping
     tex.wrapT = THREE.ClampToEdgeWrapping
@@ -835,27 +844,33 @@ export class SurfShop {
     })
   }
 
-  buildPlant() {
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.35, 8), this.mat('#4A7FB5'))
-    pot.position.set(-1.8, 0.17, 2.8)
+  buildPlant(px = -1.8, pz = 2.8) {
+    // Raise pot up so it sits clearly above terrain
+    const potH = 0.45
+    const potY = 0.3
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.20, potH, 8), this.mat('#4A7FB5'))
+    pot.position.set(px, potY, pz)
     pot.castShadow = true
+    pot.receiveShadow = true
     this.group.add(pot)
 
-    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 8), this.mat('#5C4A1E'))
-    soil.position.set(-1.8, 0.35, 2.8)
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 8), this.mat('#5C4A1E'))
+    soil.position.set(px, potY + potH / 2, pz)
     this.group.add(soil)
 
     const leafMat = this.mat('#4A8B5C')
+    const leafBaseY = potY + potH / 2 + 0.05
     for (let i = 0; i < 5; i++) {
-      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 4), leafMat)
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.45, 4), leafMat)
       const angle = (i / 5) * Math.PI * 2
       leaf.position.set(
-        -1.8 + Math.cos(angle) * 0.12,
-        0.55 + Math.random() * 0.15,
-        2.8 + Math.sin(angle) * 0.12
+        px + Math.cos(angle) * 0.12,
+        leafBaseY + (i % 3) * 0.06,
+        pz + Math.sin(angle) * 0.12
       )
-      leaf.rotation.x = (Math.random() - 0.5) * 0.5
-      leaf.rotation.z = (Math.random() - 0.5) * 0.5
+      leaf.rotation.x = (i % 2 === 0 ? 0.2 : -0.2)
+      leaf.rotation.z = (i % 2 === 0 ? 0.15 : -0.15)
+      leaf.castShadow = true
       this.group.add(leaf)
     }
   }
