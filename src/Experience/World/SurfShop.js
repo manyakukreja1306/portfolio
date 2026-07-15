@@ -71,13 +71,38 @@ export class SurfShop {
     }
 
     window.addEventListener('mousemove', (e) => {
+      // Only manage cursor when a surfboard section is displayed
+      // AND the mouse is directly over the canvas (not an HTML overlay)
+      if (!this._activeSection) return
+      const cvs = this.experience.renderer?.instance?.domElement
+      if (e.target !== cvs) return
       const btn = getHitBtn(e)
-      document.body.style.cursor = btn ? 'pointer' : ''
+      if (btn) {
+        // Hovering a canvas link → pointer
+        if (cvs) cvs.style.cursor = 'pointer'
+        document.body.style.cursor = 'pointer'
+      } else if (!this.experience.raycaster.currentHovered) {
+        // Not over a link AND Raycaster isn't hovering anything (e.g. BACK) → default
+        if (cvs) cvs.style.cursor = 'default'
+        document.body.style.cursor = 'default'
+      }
+      // else: Raycaster has a registered hit (BACK button) — leave cursor alone
     })
 
     window.addEventListener('click', (e) => {
       const btn = getHitBtn(e)
-      if (btn) window.open(btn.url, '_blank')
+      if (btn) {
+        if (btn.isDownload) {
+          const a = document.createElement('a')
+          a.href = btn.url
+          a.download = 'Manya_Kukreja_Resume.pdf'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+        } else {
+          window.open(btn.url, '_blank')
+        }
+      }
     })
   }
 
@@ -511,21 +536,29 @@ export class SurfShop {
         const picCx = w - marginX - 90
         const picCy = y - 100
         const picR = 80
-        ctx.beginPath()
-        ctx.arc(picCx, picCy, picR, 0, Math.PI * 2)
-        ctx.lineWidth = 4
-        ctx.strokeStyle = '#2C3E50'
-        ctx.stroke()
-        ctx.fillStyle = 'rgba(0,0,0,0.12)'
-        ctx.fill()
-        // silhouette head
-        ctx.beginPath()
-        ctx.arc(picCx, picCy - 28, 32, 0, Math.PI * 2)
-        ctx.fill()
-        // silhouette shoulders
-        ctx.beginPath()
-        ctx.arc(picCx, picCy + 40, 52, Math.PI, 0)
-        ctx.fill()
+        
+        const img = new window.Image()
+        img.src = '/profile.jpg'
+        img.onload = () => {
+          ctx.save()
+          ctx.beginPath()
+          ctx.arc(picCx, picCy, picR, 0, Math.PI * 2)
+          ctx.closePath()
+          ctx.clip()
+          
+          // Draw image filling the circle
+          ctx.drawImage(img, picCx - picR, picCy - picR, picR * 2, picR * 2)
+          ctx.restore()
+          
+          // Draw border on top
+          ctx.beginPath()
+          ctx.arc(picCx, picCy, picR, 0, Math.PI * 2)
+          ctx.lineWidth = 4
+          ctx.strokeStyle = '#2C3E50'
+          ctx.stroke()
+          
+          if (tex) tex.needsUpdate = true
+        }
       }
 
       y += 30
@@ -704,13 +737,55 @@ export class SurfShop {
             ctx.lineWidth = 2
             ctx.stroke()
 
-            // Store hit region (normalised 0–1) for click detection
+            // ── External link icon ──────────────────────────────
+            const iconSize = 26
+            const iconPad = 10
+            const ix = marginX + titleW + iconPad   // icon left
+            const iy = y + 1                         // icon top (align with title)
+            const ir = 4                             // corner radius
+
+            // Icon background: dark blue rounded square
+            ctx.fillStyle = '#1a0dab'
+            ctx.beginPath()
+            ctx.moveTo(ix + ir, iy)
+            ctx.lineTo(ix + iconSize - ir, iy)
+            ctx.quadraticCurveTo(ix + iconSize, iy, ix + iconSize, iy + ir)
+            ctx.lineTo(ix + iconSize, iy + iconSize - ir)
+            ctx.quadraticCurveTo(ix + iconSize, iy + iconSize, ix + iconSize - ir, iy + iconSize)
+            ctx.lineTo(ix + ir, iy + iconSize)
+            ctx.quadraticCurveTo(ix, iy + iconSize, ix, iy + iconSize - ir)
+            ctx.lineTo(ix, iy + ir)
+            ctx.quadraticCurveTo(ix, iy, ix + ir, iy)
+            ctx.closePath()
+            ctx.fill()
+
+            // Arrow icon: ↗ inside the box (white)
+            const p = 6   // inner padding
+            ctx.strokeStyle = '#ffffff'
+            ctx.lineWidth = 2.5
+            ctx.lineCap = 'round'
+            ctx.lineJoin = 'round'
+            // Arrow shaft: bottom-left to top-right
+            ctx.beginPath()
+            ctx.moveTo(ix + p, iy + iconSize - p)
+            ctx.lineTo(ix + iconSize - p, iy + p)
+            ctx.stroke()
+            // Arrow head (top-right corner)
+            ctx.beginPath()
+            ctx.moveTo(ix + iconSize - p, iy + p)
+            ctx.lineTo(ix + iconSize - p, iy + p + 9)
+            ctx.moveTo(ix + iconSize - p, iy + p)
+            ctx.lineTo(ix + iconSize - p - 9, iy + p)
+            ctx.stroke()
+            // ────────────────────────────────────────────────────
+
+            // Store hit region covering title + icon
             this._ghButtons['projects'].push({
               url: item.github,
               x0: marginX / w,
               y0: y / h,
-              x1: (marginX + titleW) / w,
-              y1: (y + 34) / h
+              x1: (marginX + titleW + iconPad + iconSize) / w,
+              y1: (y + iconSize + 4) / h
             })
           }
           y += 38
@@ -737,18 +812,18 @@ export class SurfShop {
           if (draw) { ctx.fillStyle = textColor; ctx.globalAlpha = 1 }
           y = wrapText(item.role + ' — ' + item.company, marginX, y, textWidth, 34, expRoleFont, draw)
 
-          // Date + location — italic grey
-          if (draw) ctx.fillStyle = '#555555'
+          // Date + location — italic gold
+          if (draw) ctx.fillStyle = '#222222'
           y = wrapText(item.date + ' · ' + item.location, marginX, y, textWidth, 28, expMetaFont, draw)
 
           // Optional project description line
           if (item.project) {
-            if (draw) ctx.fillStyle = '#444444'
+            if (draw) ctx.fillStyle = '#F4C77B'
             y = wrapText(item.project, marginX, y, textWidth, 28, expMetaFont, draw)
           }
 
           // Bullet points
-          if (draw) ctx.fillStyle = '#222222'
+          if (draw) ctx.fillStyle = '#F4C77B'
           item.bullets.forEach(b => {
             y = wrapText('• ' + b, marginX + 8, y, textWidth - 8, 30, expBodyFont, draw)
           })
@@ -781,11 +856,53 @@ export class SurfShop {
         y = wrapText(data.subtitle, marginX, y, textWidth, 48, bodyFont, draw)
         y += 90
 
+        if (!this._ghButtons['contact']) this._ghButtons['contact'] = []
+        if (draw) this._ghButtons['contact'] = []  // reset on each draw
+
         data.items.forEach(item => {
+          // Label (bold)
           if (draw) ctx.fillStyle = textColor
           y = wrapText(item.type, marginX, y, textWidth, 48, boldFont, draw)
-          if (draw) ctx.fillStyle = '#333333'
-          y = wrapText(item.value, marginX, y, textWidth, 48, bodyFont, draw)
+
+          // Determine if this item is a clickable link
+          const linkUrl =
+            item.type === 'Email'    ? 'https://mail.google.com/mail/?view=cm&fs=1&to=manyakukreja2005@gmail.com' :
+            item.type === 'LinkedIn' ? item.value :
+            item.type === 'GitHub'   ? item.value :
+            item.type === 'Resume'   ? '/resume.pdf' :
+            null
+          
+          const isDownload = item.type === 'Resume'
+
+          if (linkUrl) {
+            if (draw) {
+              ctx.font = bodyFont
+              ctx.fillStyle = '#1a0dab'
+              ctx.textAlign = 'left'
+              ctx.textBaseline = 'top'
+              ctx.fillText(item.value, marginX, y)
+              const tw = ctx.measureText(item.value).width
+              // Underline
+              ctx.beginPath()
+              ctx.moveTo(marginX, y + 34)
+              ctx.lineTo(marginX + tw, y + 34)
+              ctx.strokeStyle = '#1a0dab'
+              ctx.lineWidth = 2
+              ctx.stroke()
+              // Store hit region for raycasting
+              this._ghButtons['contact'].push({
+                url: linkUrl,
+                isDownload: isDownload,
+                x0: marginX / w, y0: y / h,
+                x1: (marginX + tw) / w, y1: (y + 40) / h
+              })
+            }
+            y += 48
+          } else {
+            // Non-link items (Resume): plain text
+            if (draw) ctx.fillStyle = '#333333'
+            y = wrapText(item.value, marginX, y, textWidth, 48, bodyFont, draw)
+          }
           y += 60
         })
       }
@@ -839,7 +956,7 @@ export class SurfShop {
     boardFrame.rotation.x = -0.2
     this.group.add(boardFrame)
 
-    this.addCanvasText('GOOD VIBES\nONLY', 0.55, 0.45, board.position.clone().add(new THREE.Vector3(0, 0.02, 0.025)), {
+    this.addCanvasText('Hi\n Welcome!', 0.55, 0.45, board.position.clone().add(new THREE.Vector3(0, 0.02, 0.025)), {
       font: '32px "Permanent Marker", sans-serif', color: '#FFFFFF', bg: 'transparent', lineHeight: 40, rotation: -0.2
     })
   }
