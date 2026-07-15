@@ -9,10 +9,9 @@ export class Loader {
     this.message = document.getElementById('loader-message')
 
     this.messages = [
-      "Waxing the board...",
-      "Checking the surf report...",
-      "Paddling out...",
-      "Catching a wave..."
+      "Carving out Manya's story...",
+      "Riding the barrel...",
+      "Almost onshore..."
     ]
     this.messageIndex = 0
 

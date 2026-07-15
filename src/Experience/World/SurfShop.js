@@ -197,7 +197,7 @@ export class SurfShop {
     this.group.add(ring)
 
     this.addCanvasText("Manya's\nSurf Shack", 2.2, 1.2, new THREE.Vector3(0, 2.8, 2.32), {
-      font: '44px "Permanent Marker", sans-serif', color: '#2C3E50', bg: 'transparent', lineHeight: 50
+      font: '64px "Permanent Marker", sans-serif', color: '#2C3E50', bg: 'transparent', lineHeight: 70
     })
   }
 
